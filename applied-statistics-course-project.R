@@ -1,14 +1,16 @@
 # load the data
-
 load("lung.Rdata")
 str(lung)
-# medv is median value of owner occupied homes in $1000s
-# lstat is the percentage of lower status people
+
 plot(LungCap~Age, lung)
 attach(lung)
 
 # is there a relationship netween age and capacity?
-cor(Age, LungCap)
+cor(Height, LungCap)
+
+# is there a relationship netween age and capacity?
+cor(Height, Age)
+# maybe not the best model and maybe its better to use pca
 
 # linear model
 model = lm(LungCap~Age, data=lung)
@@ -24,26 +26,33 @@ abline(model, col='red')
 par(mfrow=c(2,2))
 plot(model)
 
-# conclusion: residuals seem to be normal
+# test for normality of data
+shapiro.test(LungCap)
+
+# test for normality using Kolmogorov Smirnoff Test
+ks.test(LungCap, "pnorm")
+
+# test corelation of the dependent variable
+bartlett.test(LungCap, g=Smoke)
+
+# residuals seem to be normally distributed with the same variance
 
 # residuals plot
 plot(Age,model$residuals, pch=20,col="blue")
 abline(h=0, lwd=3)
+
 # as we can see the residuals are most likely normally distributed
-anova(model)
 
-# interpreting the summary of linear model
-# to-do: read the articles about interpreting the 
-summary(model)
-
-
+# add additional variables
 # lungcap ~ height + age model
-model2 = lm(LungCap ~ Height + Age)
+model2 = lm(LungCap ~ Height + Age + Smoke)
 summary(model2)
 
-# multiple R-squared is 0.84 which means that approximately 
-# 84% of the variation in capacity can be explained with age and height
+model3 = lm(LungCap ~ Caesarean)
+summary(model3)
 
+# multiple R-squared is 0.84 which means that approximately 
+# 84% of the variation in capacity can be explained with age and height and smoke
 
 # F-statistic:  1938 on 2 and 722 DF,  p-value: < 2.2e-16
 # This hypothesis tests whether all the model coefficients are 0
@@ -84,3 +93,52 @@ confint(model2)
 ######## Conclusions ##########
 # We have a strong relationship between the explanatory variables 
 # and the dependent variable Y, i.e. Lung Capacity.
+
+
+
+
+
+
+
+
+
+
+
+# course project 2 ###############
+A = matrix(c(0, 1, 0, 0, 0, 0, 1, 0), nrow=2, ncol=4, byrow=TRUE)
+A = matrix(c(0,0,0,1), nrow=1, byrow=TRUE)
+X = matrix(c(1, 1, 1, 1, 1, 1, 1, 
+             -3, -2, -1, 0, 1, 2, 3, 
+             5, 0, -3,-4,-3,0,5,
+             -1, 1, 1, 0, -1, -1, 1), byrow=FALSE, nrow=7,ncol=4)
+Y = c(1, 0, 0, 1, 2, 3, 3)
+
+bhats = solve(t(X) %*% X) %*% t(X) %*% Y
+yhats = X %*% bhats
+ssq=t(Y-yhats)%*%(Y-yhats) / 3
+
+T = solve(A %*% solve(t(X) %*% X) %*% t(A))
+F = t(A %*% bhats) %*% T %*% (A %*% bhats) / (2*ssq)
+pvalue = pf(F, 1, 3, lower.tail = FALSE)
+
+
+l = -20:20
+f = function (x, y) {
+  res = (20 * (2627.82-x)^2 + 2*267.25*(2627.83-x)*(-37.15-y) + 4677.69*(-37.15-y)^2)/18489.18
+  return(res)
+}
+
+call.func = function (a, b, f) {
+  result = sapply(a, function(x) sapply(b, function(y) f(x,y)))
+  return(result)
+}
+
+contour(l, l, call.func(l, f))
+
+# heatmap
+image(l, l, call.func(l, f=f))
+
+# some perspective into it
+persp(l, l, call.func(l, f), theta=120, phi=40)
+
+
